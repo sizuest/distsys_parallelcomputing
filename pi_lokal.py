@@ -53,7 +53,7 @@ if __name__ == '__main__':
         total_inside += inside
 
         if i % 100 == 0:
-            print_progress(i, 1, prefix='Fortschritt:', suffix='komplett', length=50)
+            print_progress(i, no_of_lines, prefix='Fortschritt:', suffix='komplett', length=50)
 
     end = time.time()
 
