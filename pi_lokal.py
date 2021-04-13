@@ -38,7 +38,7 @@ if __name__ == '__main__':
     print(('Schätze pi mit %s Zeilen / Spalten im 1. Quadranten (Total %s Punkte)' % (
         no_of_lines, no_of_lines * no_of_lines)))
     total_inside = 0
-    print_progress(0, 1, prefix='Fortschritt:', suffix='komplett', length=50)
+    print_progress(0, no_of_lines, prefix='Fortschritt:', suffix='komplett', length=50)
 
     y = numpy.linspace(0, 1, no_of_lines)
     i = 0
@@ -48,11 +48,11 @@ if __name__ == '__main__':
         i += 1
 
         # Berechne eine Zeile
-        inside = compute(y[i - 1], no_of_lines)
+        inside = compute(y[i - 1], 10000)
         # Summiere Ergebniss
         total_inside += inside
 
-        if i % 1000 == 0:
+        if i % 100 == 0:
             print_progress(i, 1, prefix='Fortschritt:', suffix='komplett', length=50)
 
     end = time.time()
