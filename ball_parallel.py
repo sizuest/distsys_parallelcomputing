@@ -1,8 +1,6 @@
 # MONTE CARLO SIMULATION EINES BALLWURFS, LOKAL
 #
 import argparse
-import math
-import random
 import threading
 import time
 import socket
@@ -14,7 +12,7 @@ from progressbar import print_progress
 
 
 # Trajektorie eines geworfenen Balls
-def trajectory(v_init, a_init, h_init, v_air):
+def trajectory(v_init_0, a_init_0, h_init_0, v_air_0, n=1):
     import random, math
 
     # Konstanten
@@ -23,46 +21,58 @@ def trajectory(v_init, a_init, h_init, v_air):
     rho = 1.2  # Luftdichte [kg/m^3]
     d = 0.068  # Balldurchmesser [m]
     m = 0.057  # Ballmassen [kg]
-    dt = 0.01  # Schrittweite [s]
+    dt = 0.1  # Schrittweite [s]
 
-    # Luftwiederstand (normiert)
+    # Luftwiderstand (Wert und Richtung)
     def air_drag(v_x, v_y, v_air, rho_l):
         import math
-        return 0.5 * rho_l * math.sqrt(math.pow(v_x + v_air, 2) + math.pow(v_y, 2)) * math.pow(d, 2) * math.pi / 4
+        f_a = 0.5 * rho_l * (math.pow(v_x + v_air, 2) + math.pow(v_y, 2)) * math.pow(d, 2) * math.pi / 4
+        a_a = math.atan2(v_y, v_x + v_air)
+        return f_a, a_a
 
-    # Füge Unsicherheit hinzu
-    v_init += (random.random() - .5) * 5.0
-    a_init += (random.random() - .5) * 4.0
-    h_init += (random.random() - .5) * 2.0
-    v_air += (random.random() - .5) * 2.0
-    rho_l = rho * (1 + (random.random() - .5) * 0.2)
+    result = list()
 
-    # Initialisierung
-    r_x = 0
-    r_y = h_init
-    v_x = v_init * math.cos(a_init * math.pi / 180.0)
-    v_y = v_init * math.sin(a_init * math.pi / 180.0)
+    for i in range(0, n):
+        # Füge Unsicherheit hinzu
+        v_init = v_init_0 + (random.random() - .5) * 2.0
+        a_init = a_init_0 + (random.random() - .5) * 4.0
+        h_init = h_init_0 + (random.random() - .5) * 0.1
+        v_air = v_air_0 + max(0, (random.random() - .5) * 2.0)
+        rho_l = rho * (1 + (random.random() - .5) * 0.2)
 
-    # Indikator ob der Ball die Nulllinie von unten noch nicht geschnitten hat
-    h_low = 0 > r_y
+        # Initialisierung
+        r_x = 0
+        r_y = h_init
+        v_x = v_init * math.cos(a_init * math.pi / 180.0)
+        v_y = v_init * math.sin(a_init * math.pi / 180.0)
 
-    # Euler-vorwärts-Integration
-    # ... solange bis der Ball die Nullinie von oben schneidet
-    while h_low or 0 < r_y:
-        f_a = air_drag(v_x, v_y, v_air, rho_l)
+        # Indikator ob der Ball die Nulllinie von unten noch nicht geschnitten hat
+        h_low = 0 > r_y
 
-        a_x = -f_a * (v_x + v_air)
-        a_y = -m * g - f_a * v_y
+        # Euler-vorwärts-Integration
+        # ... solange bis der Ball die Nullinie von oben schneidet
 
-        r_x += v_x * dt
-        r_y += v_y * dt
-        v_x += a_x * dt
-        v_y += a_y * dt
+        ite = 0
 
-        if h_low:
-            h_low = 0 >= r_y
+        while (h_low or 0 < r_y) and ite < 100000:
+            (f_a, b_a) = air_drag(v_x, v_y, v_air, rho_l)
 
-    return r_x
+            a_x = -f_a * math.cos(b_a)
+            a_y = -m * g - f_a * math.sin(b_a)
+
+            r_x += v_x * dt
+            r_y += v_y * dt
+            v_x += a_x * dt
+            v_y += a_y * dt
+
+            if h_low:
+                h_low = 0 >= r_y
+
+            ite += 1
+
+        result.append(r_x)
+
+    return result
 
 
 # Zählt die Distanzen
@@ -95,7 +105,8 @@ def histogram(d):
 # Job callback für dispy
 def job_callback(job):  # executed at the client
     global pending_jobs, jobs_cond, no_of_jobs_finished, n_runs
-    global distance
+    global distance, lower_bound
+    global n_sim_per_run
 
     if (job.status == dispy.DispyJob.Finished  # most usual case
             or job.status in (dispy.DispyJob.Terminated, dispy.DispyJob.Cancelled,
@@ -106,15 +117,17 @@ def job_callback(job):  # executed at the client
         no_of_jobs_finished = no_of_jobs_finished + 1
         if job.id:  # job may have finished before 'main' assigned id
             pending_jobs.pop(job.id)
-            if no_of_jobs_finished % 10 == 0:
-                print_progress(no_of_jobs_finished, n_runs, prefix='Fortschritt:', suffix='komplett', length=50)
+            if no_of_jobs_finished % 1 == 0:
+                print_progress(no_of_jobs_finished, n_runs / n_sim_per_run, prefix='Fortschritt:', suffix='komplett',
+                               length=50)
 
             # extract the results for each job as it happens
             dist_results = job.result  # returns results from job
-            distance.append(dist_results)
+            distance = distance + dist_results
 
             if len(pending_jobs) <= lower_bound:
                 jobs_cond.notify()
+
         jobs_cond.release()
 
 
@@ -122,13 +135,13 @@ if __name__ == '__main__':
 
     # set lower and upper bounds as appropriate
     # lower_bound is at least num of cpus and upper_bound is roughly 3x lower_bound
-    lower_bound, upper_bound = 3000, 10000
+    lower_bound, upper_bound = 13 * 4, 3 * 13 * 4
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("v_init", type=int, help="Initiale Geschwindigkeit [m/s]")
-    parser.add_argument("a_init", type=int, help="Abwurfwinkel [°]")
-    parser.add_argument("h_init", type=int, help="Abwurfhöhe [m]")
-    parser.add_argument("v_air", type=int, help="Windgeschwindigkeit [m/s]")
+    parser.add_argument("v_init", type=float, help="Initiale Geschwindigkeit [m/s]")
+    parser.add_argument("a_init", type=float, help="Abwurfwinkel [°]")
+    parser.add_argument("h_init", type=float, help="Abwurfhöhe [m]")
+    parser.add_argument("v_air", type=float, help="Windgeschwindigkeit [m/s]")
     parser.add_argument("n_runs", type=int, help="Läufe [-]")
 
     args = parser.parse_args()
@@ -139,17 +152,33 @@ if __name__ == '__main__':
     v_air = args.v_air
     n_runs = args.n_runs
 
-    server_nodes = ['10.180.254.84', '10.180.254.85', '10.180.254.88', '10.180.254.79', '10.180.254.83',
-                    '10.180.254.80', '10.180.254.60']
-    master_node = '10.180.254.85'
+    n_sim_per_run = 50
+
+    server_nodes = ["octapi-s2.simple.eee.intern",
+                    "octapi-s3.simple.eee.intern",
+                    "octapi-s4.simple.eee.intern",
+                    "octapi-s5.simple.eee.intern",
+                    "octapi-s6.simple.eee.intern",
+                    "octapi-s7.simple.eee.intern",
+                    "octapi-s8.simple.eee.intern",
+                    "octapi-s9.simple.eee.intern",
+                    "octapi-s10.simple.eee.intern",
+                    "octapi-s11.simple.eee.intern",
+                    "octapi-s12.simple.eee.intern",
+                    "octapi-s13.simple.eee.intern",
+                    "octapi-s14.simple.eee.intern",
+                    "octapi-s15.simple.eee.intern",
+                    "octapi-s16.simple.eee.intern"]
+    master_node = 'octapi-s16.simple.eee.intern'
 
     # use Condition variable to protect access to pending_jobs, as
     # 'job_callback' is executed in another thread
     jobs_cond = threading.Condition()
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))  # doesn't matter if 8.8.8.8 can't be reached
-    cluster = dispy.SharedJobCluster(trajectory, nodes=server_nodes, callback=job_callback, host=s.getsockname()[0],
-                                     loglevel=logging.INFO, scheduler_host=master_node, exclusive=False)
+
+    # TODO: erstellen Sie einen Cluster, welcher die Funktion 'trajectory' parallel ausführen kann
+    cluster = None
 
     pending_jobs = {}
     no_of_jobs_finished = 0
@@ -167,11 +196,14 @@ if __name__ == '__main__':
     distance = list()
 
     start = time.time()
-    while i < n_runs:
-        i += 1
+    while i < n_runs and (time.time() - start) <= 60:
+        n_sims = min(n_runs - i, n_sim_per_run)
+        i += n_sims
 
         # schedule execution of 'compute' on a node (running 'dispynode')
-        job = cluster.submit(v_init, a_init, h_init, v_air)
+        # TODO: Erstellen Sie einen neuen Job für den Cluster, welcher die Notwendigen Parameter übergibt
+        # Tip: Notwendige Parameter sind v_init, a_init, h_init, v_air, n_sims
+        job = None
 
         jobs_cond.acquire()
 
@@ -187,7 +219,7 @@ if __name__ == '__main__':
                     jobs_cond.wait()
         jobs_cond.release()
 
-    cluster.wait()
+    cluster.wait(timeout=30)
 
     end = time.time()
 
@@ -200,4 +232,4 @@ if __name__ == '__main__':
     print(('Laufzeit: %s s' % (end - start)))
 
     cluster.print_status()
-    cluster.close()
+    cluster.close(timeout=15, terminate=True)

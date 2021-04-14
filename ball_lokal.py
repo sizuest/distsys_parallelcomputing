@@ -1,8 +1,6 @@
 # MONTE CARLO SIMULATION EINES BALLWURFS, LOKAL
 #
 import argparse
-import math
-import random
 import time
 import numpy
 from progressbar import print_progress
@@ -18,12 +16,22 @@ dt = 0.1  # Schrittweite [s]
 
 
 def trajectory(v_init, a_init, h_init, v_air):
+    import random, math
+
     # Füge Unsicherheit hinzu
-    v_init += (random.random() - .5) * 5.0
+    # Füge Unsicherheit hinzu
+    v_init += (random.random() - .5) * 2.0
     a_init += (random.random() - .5) * 4.0
-    h_init += (random.random() - .5) * 2.0
-    v_air += (random.random() - .5) * 2.0
+    h_init += (random.random() - .5) * 0.1
+    v_air += max(0, (random.random() - .5) * 2.0)
     rho_l = rho * (1 + (random.random() - .5) * 0.2)
+
+    # Luftwiderstand (Wert und Richtung)
+    def air_drag(v_x, v_y, v_air, rho_l):
+        import math
+        f_a = 0.5 * rho_l * (math.pow(v_x + v_air, 2) + math.pow(v_y, 2)) * math.pow(d, 2) * math.pi / 4
+        a_a = math.atan2(v_y, v_x + v_air)
+        return f_a, a_a
 
     # Initialisierung
     r_x = 0
@@ -36,11 +44,12 @@ def trajectory(v_init, a_init, h_init, v_air):
 
     # Euler-vorwärts-Integration
     # ... solange bis der Ball die Nullinie von oben schneidet
-    while h_low or 0 < r_y:
-        f_a = air_drag(v_x, v_y, v_air, rho_l)
+    ite = 0
+    while (h_low or 0 < r_y) and ite < 10000:
+        (f_a, b_a) = air_drag(v_x, v_y, v_air, rho_l)
 
-        a_x = -f_a * (v_x + v_air)
-        a_y = -m * g - f_a * v_y
+        a_x = -f_a * math.cos(b_a)
+        a_y = -m * g - f_a * math.sin(b_a)
 
         r_x += v_x * dt
         r_y += v_y * dt
@@ -50,11 +59,9 @@ def trajectory(v_init, a_init, h_init, v_air):
         if h_low:
             h_low = 0 >= r_y
 
+        ite += 1
+
     return r_x
-
-
-def air_drag(v_x, v_y, v_air, rho_l):
-    return 0.5 * rho_l * math.sqrt(math.pow(v_x + v_air, 2) + math.pow(v_y, 2)) * math.pow(d, 2) * math.pi / 4
 
 
 def count_distances(d):
@@ -83,10 +90,10 @@ def histogram(d) -> None:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("v_init", type=int, help="Initiale Geschwindigkeit [m/s]")
-    parser.add_argument("a_init", type=int, help="Abwurfwinkel [°]")
-    parser.add_argument("h_init", type=int, help="Abwurfhöhe [m]")
-    parser.add_argument("v_air", type=int, help="Windgeschwindigkeit [m/s]")
+    parser.add_argument("v_init", type=float, help="Initiale Geschwindigkeit [m/s]")
+    parser.add_argument("a_init", type=float, help="Abwurfwinkel [°]")
+    parser.add_argument("h_init", type=float, help="Abwurfhöhe [m]")
+    parser.add_argument("v_air", type=float, help="Windgeschwindigkeit [m/s]")
     parser.add_argument("n_runs", type=int, help="Läufe [-]")
 
     args = parser.parse_args()
@@ -116,7 +123,7 @@ if __name__ == '__main__':
         # Berechne eine Zeile
         distance.append(trajectory(v_init, a_init, h_init, v_air))
 
-        if i % 1000 == 0:
+        if i % 1 == 0:
             print_progress(i, n_runs, prefix='Fortschritt:', suffix='komplett', length=50)
 
     end = time.time()
