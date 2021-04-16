@@ -154,7 +154,8 @@ if __name__ == '__main__':
 
     n_sim_per_run = 50
 
-    server_nodes = ["octapi-s2.simple.eee.intern",
+    server_nodes = ["octapi-s1.simple.eee.intern",
+                    "octapi-s2.simple.eee.intern",
                     "octapi-s3.simple.eee.intern",
                     "octapi-s4.simple.eee.intern",
                     "octapi-s5.simple.eee.intern",

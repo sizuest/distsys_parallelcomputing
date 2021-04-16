@@ -65,7 +65,8 @@ if __name__ == '__main__':
     no_of_lines = args.no_of_lines
     no_of_jobs = no_of_lines
 
-    server_nodes = ["octapi-s2.simple.eee.intern",
+    server_nodes = ["octapi-s1.simple.eee.intern",
+                    "octapi-s2.simple.eee.intern",
                     "octapi-s3.simple.eee.intern",
                     "octapi-s4.simple.eee.intern",
                     "octapi-s5.simple.eee.intern",
