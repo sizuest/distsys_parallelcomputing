@@ -117,14 +117,6 @@ if __name__ == '__main__':
     distance = list()
 
     start = time.time()
-    while i < n_runs:
-        i += 1
-
-        # Berechne eine Zeile
-        distance.append(trajectory(v_init, a_init, h_init, v_air))
-
-        if i % 1 == 0:
-            print_progress(i, n_runs, prefix='Fortschritt:', suffix='komplett', length=50)
 
     end = time.time()
 
