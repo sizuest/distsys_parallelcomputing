@@ -1,12 +1,10 @@
 # MONTE CARLO SIMULATION EINES BALLWURFS, LOKAL
 #
-import argparse
 import threading
 import time
 import socket
 import dispy
 import numpy
-import logging
 
 from progressbar import print_progress
 
@@ -37,7 +35,7 @@ def trajectory(v_init_0, a_init_0, h_init_0, v_air_0, n=1):
         v_init = v_init_0 + (random.random() - .5) * 2.0
         a_init = a_init_0 + (random.random() - .5) * 4.0
         h_init = h_init_0 + (random.random() - .5) * 0.1
-        v_air = v_air_0 + max(0, (random.random() - .5) * 2.0)
+        v_air = v_air_0 + max(0.0, (random.random() - .5) * 2.0)
         rho_l = rho * (1 + (random.random() - .5) * 0.2)
 
         # Initialisierung
@@ -137,40 +135,31 @@ if __name__ == '__main__':
     # lower_bound is at least num of cpus and upper_bound is roughly 3x lower_bound
     lower_bound, upper_bound = 13 * 4, 3 * 13 * 4
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("v_init", type=float, help="Initiale Geschwindigkeit [m/s]")
-    parser.add_argument("a_init", type=float, help="Abwurfwinkel [°]")
-    parser.add_argument("h_init", type=float, help="Abwurfhöhe [m]")
-    parser.add_argument("v_air", type=float, help="Windgeschwindigkeit [m/s]")
-    parser.add_argument("n_runs", type=int, help="Läufe [-]")
-
-    args = parser.parse_args()
-
-    v_init = args.v_init
-    a_init = args.a_init
-    h_init = args.h_init
-    v_air = args.v_air
-    n_runs = args.n_runs
+    v_init = 8.0  # Initiale Geschwindigkeit [m/s]
+    a_init = 40.0  # Abwurfwinkel [°]
+    h_init = 2.0  # Abwurfhöhe [m]
+    v_air = 5.0  # Windgeschwindigkeit [m/s]
+    n_runs = 100  # Läufe [-]
 
     n_sim_per_run = 50
 
-    server_nodes = ["octapi-s1.simple.eee.intern",
-                    "octapi-s2.simple.eee.intern",
-                    "octapi-s3.simple.eee.intern",
-                    "octapi-s4.simple.eee.intern",
-                    "octapi-s5.simple.eee.intern",
-                    "octapi-s6.simple.eee.intern",
-                    "octapi-s7.simple.eee.intern",
-                    "octapi-s8.simple.eee.intern",
-                    "octapi-s9.simple.eee.intern",
-                    "octapi-s10.simple.eee.intern",
-                    "octapi-s11.simple.eee.intern",
-                    "octapi-s12.simple.eee.intern",
-                    "octapi-s13.simple.eee.intern",
-                    "octapi-s14.simple.eee.intern",
-                    "octapi-s15.simple.eee.intern",
-                    "octapi-s16.simple.eee.intern"]
-    master_node = 'octapi-s16.simple.eee.intern'
+    server_nodes = ["192.168.0.101",
+                    "192.168.0.102",
+                    "192.168.0.103",
+                    "192.168.0.104",
+                    "192.168.0.105",
+                    "192.168.0.106",
+                    "192.168.0.107",
+                    "192.168.0.108",
+                    "192.168.0.109",
+                    "192.168.0.110",
+                    "192.168.0.111",
+                    "192.168.0.112",
+                    "192.168.0.113",
+                    "192.168.0.114",
+                    "192.168.0.115",
+                    "192.168.0.116"]
+    master_node = '192.168.0.116'
 
     # use Condition variable to protect access to pending_jobs, as
     # 'job_callback' is executed in another thread

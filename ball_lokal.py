@@ -1,6 +1,5 @@
 # MONTE CARLO SIMULATION EINES BALLWURFS, LOKAL
 #
-import argparse
 import time
 import numpy
 from progressbar import print_progress
@@ -19,11 +18,10 @@ def trajectory(v_init, a_init, h_init, v_air):
     import random, math
 
     # Füge Unsicherheit hinzu
-    # Füge Unsicherheit hinzu
     v_init += (random.random() - .5) * 2.0
     a_init += (random.random() - .5) * 4.0
     h_init += (random.random() - .5) * 0.1
-    v_air += max(0, (random.random() - .5) * 2.0)
+    v_air += max(0.0, (random.random() - .5) * 2.0)
     rho_l = rho * (1 + (random.random() - .5) * 0.2)
 
     # Luftwiderstand (Wert und Richtung)
@@ -89,20 +87,12 @@ def histogram(d) -> None:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("v_init", type=float, help="Initiale Geschwindigkeit [m/s]")
-    parser.add_argument("a_init", type=float, help="Abwurfwinkel [°]")
-    parser.add_argument("h_init", type=float, help="Abwurfhöhe [m]")
-    parser.add_argument("v_air", type=float, help="Windgeschwindigkeit [m/s]")
-    parser.add_argument("n_runs", type=int, help="Läufe [-]")
 
-    args = parser.parse_args()
-
-    v_init = args.v_init
-    a_init = args.a_init
-    h_init = args.h_init
-    v_air = args.v_air
-    n_runs = args.n_runs
+    v_init = 8.0  # Initiale Geschwindigkeit [m/s]
+    a_init = 40.0  # Abwurfwinkel [°]
+    h_init = 2.0  # Abwurfhöhe [m]
+    v_air = 5.0  # Windgeschwindigkeit [m/s]
+    n_runs = 100  # Läufe [-]
 
     print(('Schätze die Wurfdistanz eines Balls (Total %s Läufe):' % n_runs))
     print('  Initiale Geschwindigkeit: %s m/s' % v_init)
@@ -117,6 +107,14 @@ if __name__ == '__main__':
     distance = list()
 
     start = time.time()
+    while i < n_runs:
+        i += 1
+
+        # Berechne eine Zeile
+        distance.append(trajectory(v_init, a_init, h_init, v_air))
+
+        if i % 1 == 0:
+            print_progress(i, n_runs, prefix='Fortschritt:', suffix='komplett', length=50)
 
     end = time.time()
 

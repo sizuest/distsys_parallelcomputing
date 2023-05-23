@@ -3,7 +3,6 @@
 # Adaptiert von raspberrypilearning/octapi-setup
 
 import time
-import argparse
 import decimal
 import dispy
 import logging
@@ -58,30 +57,27 @@ if __name__ == '__main__':
     # lower_bound is at least num of cpus and upper_bound is roughly 3x lower_bound
     lower_bound, upper_bound = 13 * 4, 3 * 13 * 4
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("no_of_lines", type=int, help="Anzahl Zeilen / Spalten im Quadranten")
-    args = parser.parse_args()
-
-    no_of_lines = args.no_of_lines
+    no_of_lines = 1000
+    no_of_rows = 100000
     no_of_jobs = no_of_lines
 
-    server_nodes = ["octapi-s1.simple.eee.intern",
-                    "octapi-s2.simple.eee.intern",
-                    "octapi-s3.simple.eee.intern",
-                    "octapi-s4.simple.eee.intern",
-                    "octapi-s5.simple.eee.intern",
-                    "octapi-s6.simple.eee.intern",
-                    "octapi-s7.simple.eee.intern",
-                    "octapi-s8.simple.eee.intern",
-                    "octapi-s9.simple.eee.intern",
-                    "octapi-s10.simple.eee.intern",
-                    "octapi-s11.simple.eee.intern",
-                    "octapi-s12.simple.eee.intern",
-                    "octapi-s13.simple.eee.intern",
-                    "octapi-s14.simple.eee.intern",
-                    "octapi-s15.simple.eee.intern",
-                    "octapi-s16.simple.eee.intern"]
-    master_node = 'octapi-s16.simple.eee.intern'
+    server_nodes = ["192.168.0.101",
+                    "192.168.0.102",
+                    "192.168.0.103",
+                    "192.168.0.104",
+                    "192.168.0.105",
+                    "192.168.0.106",
+                    "192.168.0.107",
+                    "192.168.0.108",
+                    "192.168.0.109",
+                    "192.168.0.110",
+                    "192.168.0.111",
+                    "192.168.0.112",
+                    "192.168.0.113",
+                    "192.168.0.114",
+                    "192.168.0.115",
+                    "192.168.0.116"]
+    master_node = '192.168.0.116'
 
     # use Condition variable to protect access to pending_jobs, as
     # 'job_callback' is executed in another thread

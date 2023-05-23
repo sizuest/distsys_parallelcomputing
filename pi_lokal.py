@@ -2,7 +2,6 @@
 #
 # Adaptiert von raspberrypilearning/octapi-setup
 
-import argparse
 import decimal
 import time
 
@@ -24,14 +23,11 @@ def compute(y, n_x):
 # main
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("no_of_lines", type=int, help="Anzahl Zeilen / Spalten im Quadranten")
-    args = parser.parse_args()
-
-    no_of_lines = args.no_of_lines
+    no_of_lines = 1000
+    no_of_rows = 100000
 
     print(('Schätze pi mit %s Zeilen / Spalten im 1. Quadranten (Total %s Punkte)' % (
-        no_of_lines, no_of_lines * 100000)))
+        no_of_lines, no_of_lines * no_of_rows)))
     total_inside = 0
     print_progress(0, no_of_lines, prefix='Fortschritt:', suffix='komplett', length=50)
 
@@ -43,7 +39,7 @@ if __name__ == '__main__':
         i += 1
 
         # Berechne eine Zeile
-        inside = compute(y[i - 1], 100000)
+        inside = compute(y[i - 1], no_of_rows)
         # Summiere Ergebniss
         total_inside += inside
 
@@ -53,7 +49,7 @@ if __name__ == '__main__':
     end = time.time()
 
     # Berechnet die Schätzung für pi
-    total_no_of_points = no_of_lines * 100000
+    total_no_of_points = no_of_lines * no_of_rows
     decimal.getcontext().prec = 100  # override standard precision
     Pi = decimal.Decimal(4 * total_inside / total_no_of_points)
     print(('Schätzung für Pi mit %s Zeilen / Spalten: %s' % (total_no_of_points, +Pi)))
